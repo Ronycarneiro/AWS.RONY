@@ -1,0 +1,224 @@
+<HTML>
+		 <HEAD>
+
+       <TITLE>HOME</TITLE>
+	   <meta charset="utf-8">
+		<link rel="stylesheet" type="text/css" href="H.css"/>
+		</HEAD>
+	
+<body BGCOLOR=#FFFFFF>
+        <h1 align="center"><b>REPLICAÇÃO DE SERVIDORES DE BANCO DE DADOS PARA GARANTIR A DISPONIBILIDADE DO SERVIÇO</b></h1> 
+        
+<UL>
+				
+		<LI><h2><b>INTRODUÇÃO</b></h2>
+			<UL>
+				<LI>Replicação de banco de dados é feita para aumentar a disponibilidade do banco de dados, Distribuição de carga, realizar backup ou atualizar a versão do banco de dados sem ter pausa no fornecimento dos dados.
+				</LI>
+							
+			</ul>
+
+		</LI>
+	
+		<LI><h2><b>DESENVOLVIMENTO</b></h2>
+			<UL>
+				<LI>Replicação de banco de dados é feita para aumentar a disponibilidade do banco de dados, Distribuição de carga, realizar backup ou atualizar a versão do banco de dados sem ter pausa no fornecimento dos dados.</LI>
+
+<LI>Replicação é a copia dos dados de um banco de dados para um outro banco de dados, estes bancos de dados podem estar na mesma maquina separado logicamente ou pode estar no mesmo local ou em um local remoto. Existe dois tipos de replicação: síncrona e assíncrona.</LI>
+
+<LI>A replicação síncrona as ações são replicados instantaneamente em todos os Bancos de Dados. A vantagem deste método é que em todos os bancos de dados vao estar exatamente com os mesmo dados, não havendo perda de dados caso o servidor mestre pare.</LI>
+
+<LI>A grande desvantagem é a perca de performance, para que todos os bancos de dados fiquem com exatamente com os mesmos dados no mesmo momento, quando um usuário faz uma ação esta ação só é concluída apos ela ser realizada em todos os bancos de dados, aumentando significamente o tempo de resposta. </LI>
+
+<LI>A replicação assíncrona não é instantânea, o servidor Máster aguarda atingir uma determinada quantidade de ações para então mandar os dados para os servidores 
+
+<ul>-Aumento  disponibilidade</ul>
+</LI>
+<LI>Existe 3 tipos de replicação de um banco de dados: Replicação no mesmo local, replicação remota, e replicação mista.
+
+<ul>-Replicação no mesmo local
+
+<LI>Motivos:
+<ul>Prevenção contra falha no disco;
+Prevenção contra falha no rack;
+Prevenção contra pane eletrica;</ul>
+ </LI></ul>
+<ul>-Replicação remota
+<LI>Motivos:
+<ul>Falta de energia no servidor máster, incêndios, alagamentos, desastres naturais.</ul>
+</LI></ul>
+
+
+<ul>-Replicação mista usa a replicação local e replicação remota.</ul>
+	</LI>
+
+</LI>
+
+<LI><b>Algumas vantagens da replicação:</b><ul>
+<li align="justify"> Recuperação imediata dos sistemas em caso de desastres; Pode utilizar o conceito de espelhamento de servidor;Distribuição de carga para que nenhum sistema fique sobrecarregado;
+
+			</LI>
+		</ul>
+	</LI>
+
+	<h4><b>Realizando a replicação do PostgreSQL</b></h4>
+		<LI>Servidor Máster:
+            <ul>
+			Edite o seguinte arquivo de configuração do PostgreSQL
+			 <ul>
+			#vim /var/lib/postgresql/9.2/main/postgresql.conf  </ul>
+			</ul>
+	<ul>Edite as linhas:
+
+ <ul>listen_addresses = '*'  	#Para o servidor  </ul>
+aceitar conexões de todos os IP's
+ <ul>wal_level = hot_standby		#Nível do Servidor </ul>
+ <ul>max_wal_senders = 1  		#numero de servidores escravos </ul>
+ <ul>wal_keep_segments = 		5 #MB de segmentos </ul>
+
+	</ul>
+
+<ul>
+Acrescente a seguinte linha no arquivo de configuração /var/lib/postgresql/9.2/main/pg_hba.conf
+
+ <ul>host	replication	replicador	IPmaquinaEscrava	trust </ul>
+</ul>
+
+<ul>
+Reinicie o PostgreSQL
+ <ul>#/etc/init.d/postgresql restart </ul>
+</ul>
+
+<ul>Criar usuário para replicação
+
+<ul>#su - postgres</ul>
+<ul>$psql</ul>
+<ul>#create user replicador replication;</ul>
+<br></br>
+		</ul>
+		</LI>
+				
+			<LI>Servidor Escravo:
+                       <ul>
+Pare o serviço do PostgreSQL:
+ <ul>#/etc/init.d/postgresql stop </ul>
+
+Remover banco de dados existente
+ <ul>#rm -RF /var/lib/postgresql/9.2/main*   </ul>
+
+
+Direcionando a pasta de Replicação.
+ <ul>#su - postgres </ul>
+ <ul>#pg_basebackup -D /var/lib/postgresql/9.2/main  -h IpServidorMestre -U replicador </ul>
+
+
+Criar arquivo recovery.conf
+
+<ul>#vim/var/lib/pgsql/data/post/recovery.conf
+<ul>
+standby_mode=on
+primary_conninfo='host=IpServidorMaster user=replicador application_name=debian2'
+trigger_file='/tmp/pgtrigger'</ul>
+</ul>
+
+Inicie o serviço do PostgreSQL
+<ul>#/etc/init.d/postgresql start </ul>
+
+					</ul>
+				</LI>	
+
+			</ul>
+
+		</LI>
+
+
+
+		<LI><h2><b>RESULTADOS</b></h2>
+			<UL>
+				<LI>Para verificar se o Servidor esta no modo Escravo ou Mestre utilize a função pg_is_in_recovery(). Esta função retorna V quando esta em modo escravo e retorna F quando esta em modo Mestre
+				</LI>
+<br>
+			<center> <img src="replica1.png" width="160" height="50"/></center>
+<br>
+
+				<LI>Para promover o Servidor Escravo para Mestre:
+					<UL>#su - postgres</ul>
+					<UL>$touch /tmp/pgtrigger</ul>
+				</LI>
+				
+				<LI>Com este arquivo criado o Servidor se torna Mestre
+
+				</LI>
+		
+
+				<br>
+			<center> <img src="replic2.png" width="160" height="50"/></center>
+				<br>
+
+				
+				<LI>Banco de dados do Servidor Mestre:
+				</LI>	
+				
+
+				<br>
+			<center> <img src="mestre1.png" width="770" height="110"/></center>
+				<br>
+
+				
+				<LI>Banco de Dados do Servidor Escravo:
+				</LI>
+				
+
+				<br>
+			<center> <img src="escravo1.png" width="770" height="110"/></center>
+				<br>
+
+				
+				<LI>Criando um Banco de Dados no servidor Mestre:
+				</LI>
+				
+
+				<br>
+			<center> <img src="mestre2.png" width="160" height="25"/></center>
+				<br>
+
+				
+				
+				<LI>O Banco de Dados ‘exemplo’ foi replicado para o servidor Escravo:
+				</LI>	
+
+
+			
+				<br>
+			<center> <img src="escravo2.png" width="770" height="110"/></center>
+				<br>
+
+				</ul>
+		</LI>
+
+	
+
+		<LI><h2><b>CONCLUSÃO</b></h2>
+			<UL>
+				<LI> Para garantir disponibilidade dos servidores de Banco de Dados é essencial que seja feita a replicação dos mesmos,para que o sistema não seja interrompido em caso de eventos planejados ou não planejados. Exemplo destes eventos: Pane elétrica, alagamento, incêndio, Atualização do Banco de Dados
+				</LI>
+							
+			</ul>
+
+		</LI>
+
+	
+
+		<LI><h2><b>REFERÊNCIAS BIBLIOGRÁFICAS</b></h2>
+			<UL>
+				<LI>http://www.devmedia.com.br/introducao-a-replicacao-e-alta-disponibilidade-no-postgresql/6140
+				</LI>
+							
+			</ul>
+
+		</LI>
+	<h6><a href="Tópicos Avançados em Banco de Dados.pdf">Arquivo PDF</a><h6>
+	</UL>
+	
+	</BODY>
+</HTML>
